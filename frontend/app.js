@@ -637,17 +637,23 @@ function initLogin() {
 function initLogout() {
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-      if (confirm('Are you sure you want to sign out of your Zepp account?')) {
-        try {
-          await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST' });
-        } catch (error) {
-          console.error("Logout request failed:", error);
-        }
-        localStorage.removeItem('zepp_app_token');
-        localStorage.removeItem('zepp_user_id');
-        window.location.reload();
+    logoutBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Clear stored credentials immediately
+      localStorage.removeItem('zepp_app_token');
+      localStorage.removeItem('zepp_user_id');
+
+      // Attempt to clear server-side session (fire-and-forget)
+      try {
+        await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST' });
+      } catch (error) {
+        console.error("Logout request failed:", error);
       }
+
+      // Redirect to clean URL (strip query params) to force login screen
+      window.location.href = window.location.origin + window.location.pathname;
     });
   }
 }
