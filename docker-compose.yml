@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  zepp-dashboard:
+    build: .
+    container_name: zepp-health-dashboard
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/session.yaml:/app/backend/session.yaml
+      - ./backend/config.yaml:/app/backend/config.yaml

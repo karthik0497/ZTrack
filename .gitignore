@@ -1,32 +1,18 @@
-# Secrets / personal data — NEVER commit these
-config.json
-.env
-.envrc
-# Proxy / network captures (any tool)
-*.har
-*.chlsj
-*.chls
-*.saz
-*.saz.zip
-*.flow
-*.mitm
-*.pcap
-*.pcapng
-captures/
-
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
+# Python virtual environments
 .venv/
 venv/
-.python-version
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
+ENV/
 
-# OS / editor
+# Python byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Sensitive session files containing login tokens (CRITICAL)
+backend/session.yaml
+session.yaml
+
+# System specific files
 .DS_Store
 Thumbs.db
-.idea/
-.vscode/
