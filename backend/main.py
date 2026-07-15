@@ -4,7 +4,7 @@ import yaml
 import json
 import base64
 from datetime import datetime, timedelta, timezone
-from fastapi import FastAPI, Query, HTTPException, Body
+from fastapi import FastAPI, Query, HTTPException, Body, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -26,7 +26,9 @@ app.add_middleware(
 SESSION_FILE = os.path.join(os.path.dirname(__file__), "session.yaml")
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.yaml")
 
-def get_session():
+def get_session(x_app_token: str = None, x_user_id: str = None):
+    if x_app_token and x_user_id:
+        return x_app_token, x_user_id
     if not os.path.exists(SESSION_FILE):
         raise HTTPException(status_code=401, detail="Session not initialized. Please authenticate first.")
     with open(SESSION_FILE, "r") as f:
@@ -51,7 +53,7 @@ def login(payload: dict = Body(...)):
         with open(SESSION_FILE, "w") as f:
             yaml.safe_dump(session_data, f)
             
-        return {"status": "success", "user_id": user_id}
+        return {"status": "success", "user_id": str(user_id), "app_token": app_token}
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
 
@@ -121,14 +123,18 @@ def parse_band_detail(band_raw):
     return results
 
 @app.get("/api/health-summary")
-def get_health_summary(days: int = Query(1, ge=1, le=90)):
+def get_health_summary(
+    period: str = Query("today"),
+    x_app_token: str = Header(None),
+    x_user_id: str = Header(None)
+):
     try:
-        app_token, user_id = get_session()
+        app_token, user_id = get_session(x_app_token, x_user_id)
         config = load_config_yaml(CONFIG_FILE)
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
 
-    # Calculate date range
+    # Calculate date range based on period
     local_now = datetime.now()
     local_today = local_now.date()
     local_midnight = datetime(local_now.year, local_now.month, local_now.day, 0, 0, 0)
@@ -136,13 +142,33 @@ def get_health_summary(days: int = Query(1, ge=1, le=90)):
     now_ts = int(local_now.timestamp())
     now_ms = int(now_ts * 1000)
     
-    if days == 1:
+    if period == "today":
         start_date = local_today
         start_ts = int(local_midnight.timestamp())
-    else:
-        start_date = local_today - timedelta(days=days - 1)
+        days = 1
+    elif period == "this_week":
+        # Monday is 0, Sunday is 6
+        start_date = local_today - timedelta(days=local_today.weekday())
         start_datetime = datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
         start_ts = int(start_datetime.timestamp())
+        days = local_today.weekday() + 1
+    elif period == "this_month":
+        start_date = local_today.replace(day=1)
+        start_datetime = datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
+        start_ts = int(start_datetime.timestamp())
+        days = local_today.day
+    else:
+        # Backwards compatibility fallback if period is an integer string
+        try:
+            days_int = int(period)
+            start_date = local_today - timedelta(days=days_int - 1)
+            start_datetime = datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
+            start_ts = int(start_datetime.timestamp())
+            days = days_int
+        except ValueError:
+            start_date = local_today
+            start_ts = int(local_midnight.timestamp())
+            days = 1
         
     start_ms = int(start_ts * 1000)
 
@@ -173,6 +199,17 @@ def get_health_summary(days: int = Query(1, ge=1, le=90)):
                 "hr_stats": {"min": "N/A", "max": "N/A", "avg": "N/A"},
                 "hr_timeline": []
             }
+        
+        # Ensure all metrics keys exist on every day record
+        for key, default in [
+            ("pai_score", 0.0),
+            ("average_stress", 0),
+            ("max_stress", 0),
+            ("spo2_spot_checks", []),
+            ("weight_kg", 0.0)
+        ]:
+            if key not in daily_reports[day_str]:
+                daily_reports[day_str][key] = default
 
     # 2. Fetch PAI Scores
     try:
@@ -234,6 +271,26 @@ def get_health_summary(days: int = Query(1, ge=1, le=90)):
                     daily_reports[date_str]["spo2_spot_checks"].append(val)
     except Exception as e:
         print(f"Error SpO2: {e}")
+
+    # Fetch Weight Records
+    try:
+        weight_raw = get_metric(app_token, user_id, "weight", {
+            "fromTime": start_ts,
+            "toTime": now_ts,
+            "limit": 100,
+            "isForward": 0
+        }, config)
+        items = weight_raw if isinstance(weight_raw, list) else (weight_raw.get("items") or weight_raw.get("data") or [])
+        for item in items:
+            ts = item.get("timestamp") or item.get("time") or 0
+            if ts > 9999999999:
+                ts = ts / 1000
+            date_str = datetime.fromtimestamp(ts, tz=timezone.utc).date().isoformat()
+            w_val = item.get("weight")
+            if date_str in daily_reports and w_val:
+                daily_reports[date_str]["weight_kg"] = float(w_val)
+    except Exception as e:
+        print(f"Error Weight: {e}")
 
     # 5. Fetch Body Battery / Biocharge
     try:

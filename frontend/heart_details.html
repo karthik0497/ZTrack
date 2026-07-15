@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heart Health - Zepp Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <header class="top-header">
+      <div class="header-title">
+        <div class="brand-inline">
+          <button id="menu-toggle-btn" class="menu-toggle-btn" title="Open navigation menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <i class="fa-solid fa-heart-pulse brand-icon"></i>
+          <h2>Zepp Dashboard</h2>
+        </div>
+        <p>Heart Health detailed view</p>
+      </div>
+      <div class="header-controls">
+        <div class="sync-status">
+          <span class="pulse-indicator"></span>
+          <span id="sync-text">Synced Live</span>
+        </div>
+        <div class="user-badge">
+          <i class="fa-solid fa-user-circle"></i>
+          <span id="user-id-val" class="user-value">Loading...</span>
+        </div>
+        <button id="logout-btn" class="logout-btn" title="Sign out / Switch account">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="scroll-container">
+      <div style="background: var(--card-bg); padding: 40px; border-radius: 24px; border: 1px solid var(--card-border); text-align: center; max-width: 600px; margin: 50px auto; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);">
+        <i class="fa-solid fa-heart-pulse" style="font-size: 64px; color: var(--accent-rose); margin-bottom: 24px;"></i>
+        <h2 style="font-size: 28px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">Heart Health</h2>
+        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 30px;">
+          This page will show heart rate zones (Aerobic, Anaerobic, VO2 Max, Fat Burning), resting heart rate trends, and cardiovascular health insights.
+        </p>
+        <a href="index.html" style="display: inline-block; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple)); color: #fff; padding: 12px 30px; border-radius: 14px; font-weight: 600; text-decoration: none; transition: var(--transition-smooth); box-shadow: 0 4px 15px rgba(2, 132, 199, 0.15);">
+          Back to Overview
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Navigation Drawer (Hamburger Menu) -->
+  <div id="nav-drawer" class="nav-drawer">
+    <div class="drawer-header">
+      <div class="brand-inline">
+        <i class="fa-solid fa-heart-pulse brand-icon"></i>
+        <h2>Zepp Menu</h2>
+      </div>
+      <button id="drawer-close-btn" class="drawer-close-btn" title="Close Menu">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <nav class="drawer-nav">
+      <a href="index.html" class="drawer-link">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Overview</span>
+      </a>
+      <a href="sleep_details.html" class="drawer-link">
+        <i class="fa-solid fa-bed"></i>
+        <span>Sleep Analytics</span>
+      </a>
+      <a href="heart_details.html" class="drawer-link active">
+        <i class="fa-solid fa-heart-pulse"></i>
+        <span>Heart Health</span>
+      </a>
+      <a href="workouts.html" class="drawer-link">
+        <i class="fa-solid fa-running"></i>
+        <span>Workouts History</span>
+      </a>
+    </nav>
+  </div>
+  <div id="drawer-overlay" class="drawer-overlay"></div>
+
+  <!-- Login Modal overlay (shared behavior) -->
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-modal">
+      <div class="login-header">
+        <i class="fa-solid fa-heart-pulse brand-icon"></i>
+        <h2>Zepp Health Cloud</h2>
+        <p>Access your health dashboard & telemetry data</p>
+      </div>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-email">Email Address</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-envelope input-icon"></i>
+            <input type="email" id="login-email" placeholder="name@example.com" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="login-password" placeholder="••••••••" required>
+          </div>
+        </div>
+        <div class="error-msg" id="login-error-msg" style="display: none;">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span id="error-text">Invalid email or password.</span>
+        </div>
+        <button type="submit" class="login-btn" id="login-submit-btn">
+          <span>Sign In</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+      <div class="login-footer">
+        <p><i class="fa-solid fa-shield-halved"></i> Your credentials are sent directly to the Zepp Cloud API via secure TLS connections and are never saved in plain text.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

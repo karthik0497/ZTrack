@@ -9,79 +9,96 @@ const API_BASE_URL = window.location.origin;
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize UI navigation
   initNavigation();
-  
+
   // Initialize time range selector listener
   const rangeSelector = document.getElementById('time-range-select');
-  rangeSelector.addEventListener('change', () => {
-    fetchDashboardData(rangeSelector.value);
-  });
-  
+  if (rangeSelector) {
+    rangeSelector.addEventListener('change', () => {
+      fetchDashboardData(rangeSelector.value);
+    });
+  }
+
   // Initialize Accordions
   initAccordions();
-  
+
   // Initialize Login form submission logic
   initLogin();
-  
-  // Initial fetch (default to 1 day)
-  fetchDashboardData('1');
+
+  // Initialize Logout button event handling
+  initLogout();
+
+  // Initialize navigation drawer
+  initDrawer();
+
+  // Initial fetch (default to today)
+  fetchDashboardData('today');
 });
 
 // Navigation handling
 function initNavigation() {
-  const navItems = document.querySelectorAll('.nav-item');
-  const panels = document.querySelectorAll('.dashboard-panel');
-  const panelTitle = document.getElementById('panel-title');
+  // Sidebar navigation is disabled; all metrics are displayed on a single unified page.
+}
 
-  navItems.forEach(item => {
-    item.addEventListener('click', (e) => {
-      e.preventDefault();
-      
-      // Deactivate all nav items
-      navItems.forEach(nav => nav.classList.remove('active'));
-      // Activate clicked
-      item.classList.add('active');
-      
-      // Hide all panels
-      panels.forEach(p => p.classList.remove('active'));
-      
-      // Show targeted panel
-      const targetId = item.getAttribute('data-target');
-      const targetPanel = document.getElementById(`${targetId}-section`);
-      if (targetPanel) {
-        targetPanel.classList.add('active');
-      }
-      
-      // Update panel header title
-      panelTitle.textContent = item.querySelector('span').textContent;
-      
-      // If we switched to a tab that contains canvas, resize them
-      if (hrTimelineChart) hrTimelineChart.resize();
-      if (stepsDailyChart) stepsDailyChart.resize();
-    });
+// Drawer toggle logic
+function initDrawer() {
+  const menuBtn = document.getElementById('menu-toggle-btn');
+  const closeBtn = document.getElementById('drawer-close-btn');
+  const drawer = document.getElementById('nav-drawer');
+  const overlay = document.getElementById('drawer-overlay');
+
+  if (!menuBtn || !drawer || !overlay) return;
+
+  menuBtn.addEventListener('click', () => {
+    drawer.classList.add('open');
+    overlay.classList.add('open');
   });
+
+  const closeDrawer = () => {
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+  };
+
+  if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+  overlay.addEventListener('click', closeDrawer);
 }
 
 // Fetch dashboard dataset
-async function fetchDashboardData(days) {
+async function fetchDashboardData(period) {
+  const appToken = localStorage.getItem('zepp_app_token');
+  const userId = localStorage.getItem('zepp_user_id');
+
+  if (!appToken || !userId) {
+    document.getElementById('login-overlay').style.display = 'flex';
+    document.getElementById('sync-text').textContent = "Sign In Required";
+    return;
+  }
+
   const syncText = document.getElementById('sync-text');
   syncText.textContent = "Syncing...";
-  
+
   try {
-    const response = await fetch(`${API_BASE_URL}/api/health-summary?days=${days}`);
+    const response = await fetch(`${API_BASE_URL}/api/health-summary?period=${period}`, {
+      headers: {
+        'X-App-Token': appToken,
+        'X-User-Id': userId
+      }
+    });
     if (!response.ok) {
       if (response.status === 401) {
+        localStorage.removeItem('zepp_app_token');
+        localStorage.removeItem('zepp_user_id');
         document.getElementById('login-overlay').style.display = 'flex';
       }
       throw new Error(`API error: ${response.status}`);
     }
     dashboardData = await response.json();
-    
+
     // Hide login modal if we fetch successfully
     document.getElementById('login-overlay').style.display = 'none';
-    
+
     // Update dashboard widgets
-    updateDashboardUI(days);
-    
+    updateDashboardUI(period);
+
     syncText.textContent = "Synced Live";
   } catch (error) {
     console.error("Error loading dashboard data:", error);
@@ -90,16 +107,26 @@ async function fetchDashboardData(days) {
 }
 
 // Update UI elements with fetched data
-function updateDashboardUI(days) {
+function updateDashboardUI(period) {
   if (!dashboardData) return;
-  
+
+  const days = (period === 'today') ? '1' : period;
+
   // 1. User Info
-  document.getElementById('user-id-val').textContent = dashboardData.user_id || "N/A";
-  
+  const userIdVal = document.getElementById('user-id-val');
+  if (userIdVal) {
+    userIdVal.textContent = dashboardData.user_id || "N/A";
+  }
+
+  // Guard check: if we are on a details sub-page (and not overview dashboard), exit here
+  if (!document.getElementById('stat-steps-val')) {
+    return;
+  }
+
   // Prepare daily data
   const daysList = dashboardData.days || [];
   const todayRecord = daysList[0] || {};
-  
+
   // Update date subtitle
   const dateSubtitle = document.getElementById('date-subtitle');
   if (days === '1') {
@@ -109,16 +136,16 @@ function updateDashboardUI(days) {
     const newestDate = daysList[0]?.date || "N/A";
     dateSubtitle.textContent = `Range: ${oldestDate} to ${newestDate} (${daysList.length} days)`;
   }
-  
+
   // 2. Steps Card
   const totalSteps = daysList.reduce((sum, d) => sum + (d.steps || 0), 0);
   const totalDistMeters = daysList.reduce((sum, d) => sum + (d.distance_meters || 0), 0);
   const totalDistKm = (totalDistMeters / 1000).toFixed(2);
-  
+
   const stepsVal = document.getElementById('stat-steps-val');
   const distVal = document.getElementById('stat-dist-val');
   const stepsProgress = document.getElementById('steps-progress-bar');
-  
+
   if (days === '1') {
     stepsVal.textContent = todayRecord.steps?.toLocaleString() || "0";
     distVal.textContent = `${(todayRecord.distance_meters / 1000).toFixed(2)} km traveled`;
@@ -136,7 +163,7 @@ function updateDashboardUI(days) {
   const hrVal = document.getElementById('stat-hr-val');
   const hrMinMax = document.getElementById('stat-hr-minmax');
   const hrBadge = document.querySelector('.hr-avg');
-  
+
   if (days === '1') {
     const stats = todayRecord.hr_stats || {};
     if (stats.avg && stats.avg !== "N/A") {
@@ -159,9 +186,9 @@ function updateDashboardUI(days) {
       if (s.max && s.max !== "N/A") validMax.push(s.max);
       if (s.avg && s.avg !== "N/A") validAvg.push(s.avg);
     });
-    
+
     if (validAvg.length > 0) {
-      const overallAvg = Math.round(validAvg.reduce((a,b) => a+b, 0) / validAvg.length);
+      const overallAvg = Math.round(validAvg.reduce((a, b) => a + b, 0) / validAvg.length);
       const overallMin = Math.min(...validMin);
       const overallMax = Math.max(...validMax);
       hrVal.innerHTML = `${overallAvg} <span class="unit">bpm</span>`;
@@ -174,210 +201,162 @@ function updateDashboardUI(days) {
     }
   }
 
-  // 4. Sleep Card & Panel
+  // 4. Sleep Card
   const sleepVal = document.getElementById('stat-sleep-val');
   const sleepRhr = document.getElementById('stat-sleep-rhr');
   const sleepBadge = document.querySelector('.sleep-status');
-  
-  const sleepEmpty = document.getElementById('sleep-empty-view');
-  const sleepContent = document.getElementById('sleep-content-view');
-  
+
   if (days === '1') {
     const sl = todayRecord.sleep || {};
     const totalMin = (sl.deep_sleep_minutes || 0) + (sl.light_sleep_minutes || 0) + (sl.rem_sleep_minutes || 0);
-    
+
     if (totalMin > 0) {
       const hrs = Math.floor(totalMin / 60);
       const mins = totalMin % 60;
       sleepVal.textContent = `${hrs}h ${mins}m`;
       sleepRhr.textContent = `Resting HR: ${sl.resting_heart_rate || "N/A"} bpm`;
       sleepBadge.textContent = "Recorded";
-      
-      // Update sleep stage visualizer
-      sleepEmpty.style.display = "none";
-      sleepContent.style.display = "block";
-      document.getElementById('sleep-total-hrs').textContent = `${hrs}h ${mins}m`;
-      
-      document.getElementById('sleep-deep-val').textContent = `${sl.deep_sleep_minutes}m`;
-      document.getElementById('sleep-light-val').textContent = `${sl.light_sleep_minutes}m`;
-      document.getElementById('sleep-rem-val').textContent = `${sl.rem_sleep_minutes}m`;
-      document.getElementById('sleep-awake-val').textContent = `${sl.awake_minutes}m`;
-      
-      document.getElementById('sleep-deep-bar').style.width = `${(sl.deep_sleep_minutes / totalMin) * 100}%`;
-      document.getElementById('sleep-light-bar').style.width = `${(sl.light_sleep_minutes / totalMin) * 100}%`;
-      document.getElementById('sleep-rem-bar').style.width = `${(sl.rem_sleep_minutes / totalMin) * 100}%`;
-      document.getElementById('sleep-awake-bar').style.width = `${(sl.awake_minutes / totalMin) * 100}%`;
     } else {
       sleepVal.textContent = "N/A";
       sleepRhr.textContent = "No sleep recorded";
       sleepBadge.textContent = "No Sleep Data";
-      sleepEmpty.style.display = "flex";
-      sleepContent.style.display = "none";
     }
   } else {
     // Average sleep calculations
     let totalSleepMinsList = [];
-    let avgDeep = 0, avgLight = 0, avgRem = 0, avgAwake = 0, avgRhr = 0, count = 0;
-    
+    let avgRhr = 0, count = 0;
+
     daysList.forEach(d => {
       const sl = d.sleep || {};
       const t = (sl.deep_sleep_minutes || 0) + (sl.light_sleep_minutes || 0) + (sl.rem_sleep_minutes || 0);
       if (t > 0) {
         totalSleepMinsList.push(t);
-        avgDeep += sl.deep_sleep_minutes || 0;
-        avgLight += sl.light_sleep_minutes || 0;
-        avgRem += sl.rem_sleep_minutes || 0;
-        avgAwake += sl.awake_minutes || 0;
         avgRhr += sl.resting_heart_rate || 0;
         count++;
       }
     });
-    
+
     if (count > 0) {
-      const overallAvgMins = Math.round(totalSleepMinsList.reduce((a,b)=>a+b, 0) / count);
+      const overallAvgMins = Math.round(totalSleepMinsList.reduce((a, b) => a + b, 0) / count);
       const hrs = Math.floor(overallAvgMins / 60);
       const mins = overallAvgMins % 60;
       sleepVal.textContent = `${hrs}h ${mins}m`;
       sleepRhr.textContent = `Avg Resting HR: ${Math.round(avgRhr / count)} bpm`;
       sleepBadge.textContent = `Avg (${count} nights)`;
-      
-      // Update sleep stages panel with averages
-      sleepEmpty.style.display = "none";
-      sleepContent.style.display = "block";
-      document.getElementById('sleep-total-hrs').textContent = `${hrs}h ${mins}m`;
-      
-      const dVal = Math.round(avgDeep / count);
-      const lVal = Math.round(avgLight / count);
-      const rVal = Math.round(avgRem / count);
-      const aVal = Math.round(avgAwake / count);
-      
-      document.getElementById('sleep-deep-val').textContent = `${dVal}m`;
-      document.getElementById('sleep-light-val').textContent = `${lVal}m`;
-      document.getElementById('sleep-rem-val').textContent = `${rVal}m`;
-      document.getElementById('sleep-awake-val').textContent = `${aVal}m`;
-      
-      const totalAvg = dVal + lVal + rVal;
-      document.getElementById('sleep-deep-bar').style.width = `${(dVal / totalAvg) * 100}%`;
-      document.getElementById('sleep-light-bar').style.width = `${(lVal / totalAvg) * 100}%`;
-      document.getElementById('sleep-rem-bar').style.width = `${(rVal / totalAvg) * 100}%`;
-      document.getElementById('sleep-awake-bar').style.width = `${(aVal / totalAvg) * 100}%`;
     } else {
       sleepVal.textContent = "N/A";
       sleepRhr.textContent = "No sleep recorded";
       sleepBadge.textContent = "No Sleep Data";
-      sleepEmpty.style.display = "flex";
-      sleepContent.style.display = "none";
     }
   }
 
-  // 5. PAI & Body Battery Card
-  const paiVal = document.getElementById('stat-pai-val');
-  const batteryVal = document.getElementById('stat-battery-val');
-  
-  if (days === '1') {
-    paiVal.textContent = todayRecord.pai_score ? Math.round(todayRecord.pai_score) : "N/A";
-    batteryVal.textContent = todayRecord.average_body_battery ? `Body Battery: ${todayRecord.average_body_battery}%` : "Body Battery: N/A";
-  } else {
-    // Get latest valid PAI
-    const latestPai = daysList.find(d => d.pai_score !== undefined)?.pai_score;
-    paiVal.textContent = latestPai ? Math.round(latestPai) : "N/A";
-    
-    // Average battery
-    const validBatteries = daysList.filter(d => d.average_body_battery !== undefined).map(d => d.average_body_battery);
-    if (validBatteries.length > 0) {
-      const avgBattery = Math.round(validBatteries.reduce((a,b) => a+b, 0) / validBatteries.length);
-      batteryVal.textContent = `Avg Body Battery: ${avgBattery}%`;
-    } else {
-      batteryVal.textContent = "Body Battery: N/A";
-    }
-  }
+  // 5. Blood Oxygen (SpO2) Card
+  const statSpo2Val = document.getElementById('stat-spo2-val');
+  const statSpo2Badge = document.getElementById('stat-spo2-badge');
 
-  // 6. Blood Oxygen (SpO2) Spot Checks
-  const spo2Low = document.getElementById('spo2-low');
-  const spo2Avg = document.getElementById('spo2-avg');
-  const spo2List = document.getElementById('spo2-recent-list');
-  spo2List.innerHTML = '';
-  
   let allSpo2 = [];
   daysList.forEach(d => {
     if (d.spo2_spot_checks) {
       allSpo2.push(...d.spo2_spot_checks);
     }
   });
-  
+
   if (allSpo2.length > 0) {
-    spo2Low.textContent = Math.min(...allSpo2) + "%";
-    spo2Avg.textContent = Math.round(allSpo2.reduce((a,b)=>a+b, 0) / allSpo2.length) + "%";
-    
-    allSpo2.slice(0, 12).forEach(val => {
-      const pill = document.createElement('div');
-      pill.className = 'spo2-pill';
-      pill.textContent = `${val}%`;
-      spo2List.appendChild(pill);
-    });
+    const sAvg = Math.round(allSpo2.reduce((a, b) => a + b, 0) / allSpo2.length);
+    statSpo2Val.innerHTML = `${allSpo2[0]} <span class="unit">%</span>`;
+    statSpo2Badge.textContent = `Avg: ${sAvg}%`;
   } else {
-    spo2Low.textContent = "N/A";
-    spo2Avg.textContent = "N/A";
-    spo2List.innerHTML = '<span style="font-size:13px; color:var(--text-secondary);">No SpO2 readings recorded in this period.</span>';
+    statSpo2Val.textContent = "N/A";
+    statSpo2Badge.textContent = "Avg: N/A";
   }
 
-  // 7. VO2 Max Panel
-  const vo2Val = document.getElementById('vo2-value-display');
-  const vo2Status = document.getElementById('vo2-status-display');
-  
-  const score = dashboardData.latest_vo2_max;
-  if (score && score !== "N/A") {
-    const numericScore = parseFloat(score);
-    vo2Val.textContent = numericScore.toFixed(1);
-    
-    // Classify VO2 Max
-    if (numericScore >= 48) {
-      vo2Status.textContent = "Fitness Level: Excellent 🏃‍♂️";
-      vo2Status.style.borderColor = "var(--accent-cyan)";
-      vo2Status.style.color = "var(--accent-cyan)";
-    } else if (numericScore >= 39) {
-      vo2Status.textContent = "Fitness Level: Good 👍";
-      vo2Status.style.borderColor = "var(--accent-green)";
-      vo2Status.style.color = "var(--accent-green)";
-    } else if (numericScore >= 33) {
-      vo2Status.textContent = "Fitness Level: Fair ⚖️";
-      vo2Status.style.borderColor = "var(--accent-amber)";
-      vo2Status.style.color = "var(--accent-amber)";
+  // 6. Stress Card
+  const statStressVal = document.getElementById('stat-stress-val');
+  const statStressDesc = document.getElementById('stat-stress-desc');
+  const statStressBadge = document.getElementById('stat-stress-badge');
+
+  let allStressAvg = [];
+  let allStressMax = [];
+  daysList.forEach(d => {
+    if (d.average_stress) allStressAvg.push(d.average_stress);
+    if (d.max_stress) allStressMax.push(d.max_stress);
+  });
+
+  if (allStressAvg.length > 0) {
+    const avgStress = Math.round(allStressAvg.reduce((a, b) => a + b, 0) / allStressAvg.length);
+    const maxStress = Math.max(...allStressMax);
+    statStressVal.textContent = avgStress;
+    statStressDesc.textContent = `Max stress: ${maxStress}`;
+
+    if (avgStress < 35) {
+      statStressBadge.textContent = "Relaxed";
+      statStressBadge.style.background = "rgba(0, 230, 118, 0.12)";
+      statStressBadge.style.color = "#00e676";
+    } else if (avgStress < 60) {
+      statStressBadge.textContent = "Normal";
+      statStressBadge.style.background = "rgba(2, 132, 199, 0.12)";
+      statStressBadge.style.color = "var(--accent-cyan)";
     } else {
-      vo2Status.textContent = "Fitness Level: Poor 🛌";
-      vo2Status.style.borderColor = "var(--accent-rose)";
-      vo2Status.style.color = "var(--accent-rose)";
+      statStressBadge.textContent = "High Stress";
+      statStressBadge.style.background = "rgba(219, 39, 119, 0.12)";
+      statStressBadge.style.color = "var(--accent-rose)";
     }
   } else {
-    vo2Val.textContent = "N/A";
-    vo2Status.textContent = "Fitness Level: Unknown";
-    vo2Status.style.borderColor = "var(--card-border)";
-    vo2Status.style.color = "var(--text-secondary)";
+    statStressVal.textContent = "N/A";
+    statStressDesc.textContent = "Max stress: N/A";
+    statStressBadge.textContent = "No data";
+    statStressBadge.style.background = "rgba(0,0,0,0.05)";
+    statStressBadge.style.color = "var(--text-secondary)";
   }
 
-  // 8. Workouts Table
-  const tableBody = document.querySelector('#workout-table-body tbody');
-  const workoutEmpty = document.getElementById('workouts-empty-view');
-  tableBody.innerHTML = '';
-  
-  const workouts = dashboardData.workouts || [];
-  if (workouts.length > 0) {
-    workoutEmpty.style.display = "none";
-    workouts.forEach(w => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td><strong>${w.date}</strong></td>
-        <td>${w.distance_km} km</td>
-        <td>${w.duration_minutes} mins</td>
-        <td>${w.avg_heart_rate} bpm</td>
-        <td>${w.calories_burned} kcal</td>
-        <td>${w.min_altitude}m - ${w.max_altitude}m</td>
-      `;
-      tableBody.appendChild(row);
-    });
+  // 7. VO2 Max Card
+  const statVo2Val = document.getElementById('stat-vo2-val');
+  const statVo2Badge = document.getElementById('stat-vo2-badge');
+
+  const vo2Score = dashboardData.latest_vo2_max;
+  if (vo2Score && vo2Score !== "N/A") {
+    const numericScore = parseFloat(vo2Score);
+    statVo2Val.textContent = numericScore.toFixed(1);
+
+    if (numericScore >= 48) {
+      statVo2Badge.textContent = "Excellent";
+      statVo2Badge.style.background = "rgba(13, 148, 136, 0.12)";
+      statVo2Badge.style.color = "var(--accent-green)";
+    } else if (numericScore >= 39) {
+      statVo2Badge.textContent = "Good";
+      statVo2Badge.style.background = "rgba(2, 132, 199, 0.12)";
+      statVo2Badge.style.color = "var(--accent-cyan)";
+    } else if (numericScore >= 33) {
+      statVo2Badge.textContent = "Fair";
+      statVo2Badge.style.background = "rgba(234, 88, 12, 0.12)";
+      statVo2Badge.style.color = "var(--accent-amber)";
+    } else {
+      statVo2Badge.textContent = "Poor";
+      statVo2Badge.style.background = "rgba(219, 39, 119, 0.12)";
+      statVo2Badge.style.color = "var(--accent-rose)";
+    }
   } else {
-    workoutEmpty.style.display = "block";
+    statVo2Val.textContent = "N/A";
+    statVo2Badge.textContent = "Unknown";
+    statVo2Badge.style.background = "rgba(0, 0, 0, 0.05)";
+    statVo2Badge.style.color = "var(--text-secondary)";
   }
+
+  // 6d. Calories Burned Card
+  const statCaloriesVal = document.getElementById('stat-calories-val');
+  const statCaloriesDesc = document.getElementById('stat-calories-desc');
+
+  const totalCalories = daysList.reduce((sum, d) => sum + (d.calories_burned_kcal || 0), 0);
+  if (days === '1') {
+    statCaloriesVal.innerHTML = `${todayRecord.calories_burned_kcal || 0} <span class="unit">kcal</span>`;
+    statCaloriesDesc.textContent = "Active energy burned today";
+  } else {
+    const avgCalories = Math.round(totalCalories / daysList.length);
+    statCaloriesVal.innerHTML = `${avgCalories} <span class="unit">kcal</span>`;
+    statCaloriesDesc.textContent = `Avg per day | Total: ${totalCalories.toLocaleString()} kcal`;
+  }
+
+
 
   // 9. Render/Update Charts
   renderHeartRateChart(days, todayRecord, daysList);
@@ -387,25 +366,25 @@ function updateDashboardUI(days) {
 // Render Heart Rate Timeline Chart
 function renderHeartRateChart(days, todayRecord, daysList) {
   const ctx = document.getElementById('hrTimelineChart').getContext('2d');
-  
+
   if (hrTimelineChart) {
     hrTimelineChart.destroy();
   }
-  
+
   let labels = [];
   let datasets = [];
-  
+
   if (days === '1') {
     // 1-Day View: Show minute-by-minute heart rate (grouped hourly to avoid clutter)
     const timeline = todayRecord.hr_timeline || [];
-    
+
     // Group minutes into 15-minute averages
     const intervalMins = 15;
     const intervalsCount = 1440 / intervalMins;
-    
+
     const values = new Array(intervalsCount).fill(null);
     const counts = new Array(intervalsCount).fill(0);
-    
+
     timeline.forEach(t => {
       if (t.hr !== null) {
         const bucket = Math.floor(t.minute / intervalMins);
@@ -415,11 +394,11 @@ function renderHeartRateChart(days, todayRecord, daysList) {
         }
       }
     });
-    
+
     const hrData = values.map((val, idx) => {
       return counts[idx] > 0 ? Math.round(val / counts[idx]) : null;
     });
-    
+
     // Labels format: e.g. "02:00"
     for (let i = 0; i < intervalsCount; i++) {
       const totalMinutes = i * intervalMins;
@@ -428,7 +407,7 @@ function renderHeartRateChart(days, todayRecord, daysList) {
       const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
       labels.push(timeStr);
     }
-    
+
     datasets.push({
       label: 'Heart Rate (bpm)',
       data: hrData,
@@ -445,11 +424,11 @@ function renderHeartRateChart(days, todayRecord, daysList) {
     // Multi-Day View: Show Min, Max, and Avg Heart Rate trends per day
     const reversedDays = [...daysList].reverse();
     labels = reversedDays.map(d => d.date);
-    
+
     const avgData = reversedDays.map(d => d.hr_stats?.avg === 'N/A' ? null : d.hr_stats?.avg);
     const maxData = reversedDays.map(d => d.hr_stats?.max === 'N/A' ? null : d.hr_stats?.max);
     const minData = reversedDays.map(d => d.hr_stats?.min === 'N/A' ? null : d.hr_stats?.min);
-    
+
     datasets.push({
       label: 'Max HR',
       data: maxData,
@@ -481,7 +460,7 @@ function renderHeartRateChart(days, todayRecord, daysList) {
       spanGaps: true
     });
   }
-  
+
   hrTimelineChart = new Chart(ctx, {
     type: 'line',
     data: { labels, datasets },
@@ -513,15 +492,15 @@ function renderHeartRateChart(days, todayRecord, daysList) {
 // Render Daily Steps Bar Chart
 function renderStepsChart(days, daysList) {
   const ctx = document.getElementById('stepsDailyChart').getContext('2d');
-  
+
   if (stepsDailyChart) {
     stepsDailyChart.destroy();
   }
-  
+
   const reversedDays = [...daysList].reverse();
   const labels = reversedDays.map(d => d.date.split('-').slice(1).join('/')); // Format: MM/DD
   const stepsData = reversedDays.map(d => d.steps || 0);
-  
+
   stepsDailyChart = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -559,14 +538,14 @@ function renderStepsChart(days, daysList) {
 function switchExplainTab(tabId) {
   const tabs = document.querySelectorAll('.explain-tab-btn');
   const contents = document.querySelectorAll('.explain-tab-content');
-  
+
   tabs.forEach(t => {
     t.classList.remove('active');
     if (t.outerHTML.includes(tabId)) {
       t.classList.add('active');
     }
   });
-  
+
   contents.forEach(c => {
     c.classList.remove('active');
     if (c.id === tabId) {
@@ -582,10 +561,10 @@ function initAccordions() {
     h.addEventListener('click', () => {
       const item = h.parentElement;
       const isActive = item.classList.contains('active');
-      
+
       // Close all accordions
       document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('active'));
-      
+
       // Toggle current
       if (!isActive) {
         item.classList.add('active');
@@ -636,6 +615,10 @@ function initLogin() {
         throw new Error(err.detail || 'Authentication failed');
       }
 
+      const result = await response.json();
+      localStorage.setItem('zepp_app_token', result.app_token);
+      localStorage.setItem('zepp_user_id', result.user_id);
+
       // Hide login page, trigger refresh
       loginOverlay.style.display = 'none';
       fetchDashboardData(document.getElementById('time-range-select').value);
@@ -648,8 +631,10 @@ function initLogin() {
       btnTextSpan.textContent = originalText;
     }
   });
+}
 
-  // Logout button handling
+// Initialize Logout handling
+function initLogout() {
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
@@ -659,6 +644,8 @@ function initLogin() {
         } catch (error) {
           console.error("Logout request failed:", error);
         }
+        localStorage.removeItem('zepp_app_token');
+        localStorage.removeItem('zepp_user_id');
         window.location.reload();
       }
     });

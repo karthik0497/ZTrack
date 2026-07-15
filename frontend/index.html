@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,8 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
   <!-- FontAwesome for Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Chart.js -->
@@ -15,81 +17,53 @@
   <!-- Custom Style -->
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <i class="fa-solid fa-heart-pulse brand-icon"></i>
-      <h2>Zepp Health</h2>
-    </div>
-    
-    <div class="time-filter-section">
-      <label for="time-range-select">Time Period</label>
-      <select id="time-range-select" class="time-select">
-        <option value="1">Today (12 AM - Now)</option>
-        <option value="7">Last 7 Days</option>
-        <option value="30">Last 30 Days</option>
-      </select>
-    </div>
-
-    <nav class="sidebar-nav">
-      <a href="#overview" class="nav-item active" data-target="overview">
-        <i class="fa-solid fa-chart-line"></i>
-        <span>Overview</span>
-      </a>
-      <a href="#sleep" class="nav-item" data-target="sleep">
-        <i class="fa-solid fa-moon"></i>
-        <span>Sleep Analysis</span>
-      </a>
-      <a href="#vo2" class="nav-item" data-target="vo2">
-        <i class="fa-solid fa-lungs"></i>
-        <span>VO2 Max Capacity</span>
-      </a>
-      <a href="#workouts" class="nav-item" data-target="workouts">
-        <i class="fa-solid fa-person-running"></i>
-        <span>Workouts & Altitude</span>
-      </a>
-      <a href="#weather" class="nav-item" data-target="weather">
-        <i class="fa-solid fa-cloud-sun-rain"></i>
-        <span>Weather Data</span>
-      </a>
-      <a href="#pai-explain" class="nav-item" data-target="pai-explain">
-        <i class="fa-solid fa-circle-info"></i>
-        <span>Explain Metrics</span>
-      </a>
-    </nav>
-
-    <div class="sidebar-footer">
-      <div class="user-badge">
-        <i class="fa-solid fa-user-circle"></i>
-        <div class="user-badge-info">
-          <span class="user-label">Zepp User ID</span>
-          <span id="user-id-val" class="user-value">Loading...</span>
-        </div>
-      </div>
-      <button id="logout-btn" class="logout-btn" title="Sign out / Switch account">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </button>
-    </div>
-  </aside>
+  <!-- Sidebar Hidden (Simplified to Top Navbar) -->
 
   <!-- Main Content Area -->
   <main class="main-content">
     <header class="top-header">
       <div class="header-title">
-        <h1 id="panel-title">Overview Dashboard</h1>
+        <div class="brand-inline">
+          <button id="menu-toggle-btn" class="menu-toggle-btn" title="Open navigation menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <i class="fa-solid fa-heart-pulse brand-icon"></i>
+          <h2>Zepp Dashboard</h2>
+        </div>
         <p id="date-subtitle">Fetching today's biometric timeline...</p>
       </div>
-      <div class="sync-status">
-        <span class="pulse-indicator"></span>
-        <span id="sync-text">Synced Live</span>
+
+      <div class="header-controls">
+        <div class="time-filter-section">
+          <select id="time-range-select" class="time-select">
+            <option value="today">Today</option>
+            <option value="this_week">This Week</option>
+            <option value="this_month">This Month</option>
+          </select>
+        </div>
+
+        <div class="sync-status">
+          <span class="pulse-indicator"></span>
+          <span id="sync-text">Synced Live</span>
+        </div>
+
+        <div class="user-badge">
+          <i class="fa-solid fa-user-circle"></i>
+          <span id="user-id-val" class="user-value">Loading...</span>
+        </div>
+
+        <button id="logout-btn" class="logout-btn" title="Sign out / Switch account">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
       </div>
     </header>
 
     <!-- Content Sections -->
     <div class="scroll-container">
-      
+
       <!-- Section: Overview -->
       <section id="overview-section" class="dashboard-panel active">
         <!-- Quick Stats Grid -->
@@ -115,7 +89,7 @@
               <i class="fa-solid fa-heartbeat"></i>
             </div>
             <div class="stat-info">
-              <h3>Heart Rate (Today)</h3>
+              <h3>Heart Rate</h3>
               <div class="stat-value" id="stat-hr-val">N/A <span class="unit">bpm</span></div>
               <p class="stat-desc" id="stat-hr-minmax">Min: N/A | Max: N/A</p>
             </div>
@@ -135,17 +109,56 @@
             <div class="stat-badge sleep-status">N/A</div>
           </div>
 
-          <!-- Card: PAI & Body Battery -->
-          <div class="stat-card stat-pai">
+          <!-- Card: SpO2 Blood Oxygen -->
+          <div class="stat-card stat-spo2">
             <div class="stat-icon-wrapper">
-              <i class="fa-solid fa-bolt"></i>
+              <i class="fa-solid fa-droplet"></i>
             </div>
             <div class="stat-info">
-              <h3>PAI & Body Battery</h3>
-              <div class="stat-value" id="stat-pai-val">N/A</div>
-              <p class="stat-desc" id="stat-battery-val">Body Energy: N/A%</p>
+              <h3>Blood Oxygen (SpO2)</h3>
+              <div class="stat-value" id="stat-spo2-val">N/A</div>
+              <p class="stat-desc" id="stat-spo2-desc">Recent spot check readings</p>
             </div>
-            <div class="stat-badge pai-score">PAI Score</div>
+            <div class="stat-badge spo2-avg" id="stat-spo2-badge">Avg: N/A</div>
+          </div>
+
+          <!-- Card: Stress Level -->
+          <div class="stat-card stat-stress">
+            <div class="stat-icon-wrapper">
+              <i class="fa-solid fa-brain"></i>
+            </div>
+            <div class="stat-info">
+              <h3>Stress Level</h3>
+              <div class="stat-value" id="stat-stress-val">N/A</div>
+              <p class="stat-desc" id="stat-stress-desc">Max stress: N/A</p>
+            </div>
+            <div class="stat-badge stress-status" id="stat-stress-badge">Normal</div>
+          </div>
+
+          <!-- Card: VO2 Max -->
+          <div class="stat-card stat-vo2">
+            <div class="stat-icon-wrapper">
+              <i class="fa-solid fa-lungs"></i>
+            </div>
+            <div class="stat-info">
+              <h3>VO2 Max</h3>
+              <div class="stat-value" id="stat-vo2-val">N/A</div>
+              <p class="stat-desc" id="stat-vo2-desc">Aerobic fitness capacity</p>
+            </div>
+            <div class="stat-badge vo2-status" id="stat-vo2-badge">Unknown</div>
+          </div>
+
+          <!-- Card: Calories Burned -->
+          <div class="stat-card stat-calories">
+            <div class="stat-icon-wrapper">
+              <i class="fa-solid fa-fire"></i>
+            </div>
+            <div class="stat-info">
+              <h3>Calories Burned</h3>
+              <div class="stat-value" id="stat-calories-val">0 <span class="unit">kcal</span></div>
+              <p class="stat-desc" id="stat-calories-desc">Total active energy</p>
+            </div>
+            <div class="stat-badge calories-status" id="stat-calories-badge">Active</div>
           </div>
         </div>
 
@@ -154,7 +167,6 @@
           <div class="chart-card large-chart">
             <div class="chart-header">
               <h3>Minute-by-Minute Heart Rate Tracking</h3>
-              <span class="info-tooltip-btn" onclick="showExplainer('hr')"><i class="fa-solid fa-circle-question"></i></span>
             </div>
             <div class="chart-container">
               <canvas id="hrTimelineChart"></canvas>
@@ -167,275 +179,6 @@
             </div>
             <div class="chart-container">
               <canvas id="stepsDailyChart"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <!-- Secondary Details -->
-        <div class="detail-row">
-          <!-- Blood Oxygen Spot Checks -->
-          <div class="info-card">
-            <div class="info-card-header">
-              <h3><i class="fa-solid fa-droplet"></i> SpO2 Blood Oxygen Spot Checks</h3>
-              <span class="info-tooltip-btn" onclick="showExplainer('spo2')"><i class="fa-solid fa-circle-question"></i></span>
-            </div>
-            <div class="spo2-stats-container">
-              <div class="spo2-metric">
-                <span class="label">Lowest Today</span>
-                <span class="value" id="spo2-low">N/A</span>
-              </div>
-              <div class="spo2-divider"></div>
-              <div class="spo2-metric">
-                <span class="label">Average Spot Check</span>
-                <span class="value" id="spo2-avg">N/A</span>
-              </div>
-            </div>
-            <div class="spo2-list-wrapper">
-              <h4>Recent SpO2 Readings:</h4>
-              <div class="spo2-pill-container" id="spo2-recent-list">
-                <!-- SpO2 pills go here -->
-              </div>
-            </div>
-          </div>
-
-          <!-- Quick Explanation Grid -->
-          <div class="info-card quick-explain-card">
-            <h3><i class="fa-solid fa-graduation-cap"></i> Metric Quick Explainer</h3>
-            <div class="explain-tabs">
-              <button class="explain-tab-btn active" onclick="switchExplainTab('tab-pai')">PAI</button>
-              <button class="explain-tab-btn" onclick="switchExplainTab('tab-vo2')">VO2 Max</button>
-              <button class="explain-tab-btn" onclick="switchExplainTab('tab-bb')">Body Battery</button>
-            </div>
-            <div class="explain-tab-content active" id="tab-pai">
-              <h4>Personal Activity Intelligence (PAI)</h4>
-              <p>PAI is a scientifically backed metric that translates your heart rate data into a single, simple score. Staying above 100 PAI weekly is proven to significantly improve cardiovascular longevity and health outcomes.</p>
-            </div>
-            <div class="explain-tab-content" id="tab-vo2">
-              <h4>VO2 Max (Aerobic Capacity)</h4>
-              <p>VO2 Max indicates the maximum volume of oxygen you can consume per minute during intense exercise. It is the ultimate indicator of cardiorespiratory fitness and endurance capabilities.</p>
-            </div>
-            <div class="explain-tab-content" id="tab-bb">
-              <h4>Body Battery (Biocharge)</h4>
-              <p>Uses Heart Rate Variability (HRV), sleep cycles, and activities to calculate your energy reserve score (0-100%). High sleep scores recharge it, while workouts and stress deplete it.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section: Sleep -->
-      <section id="sleep-section" class="dashboard-panel">
-        <div class="panel-card">
-          <div class="panel-card-header">
-            <h2><i class="fa-solid fa-moon"></i> Sleep Stages & Quality Report</h2>
-            <span class="card-subtitle">Detailed breakdown of night phases</span>
-          </div>
-          
-          <div class="sleep-empty-state" id="sleep-empty-view">
-            <i class="fa-regular fa-face-meh sleep-empty-icon"></i>
-            <h3>No Sleep Data Found</h3>
-            <p>No sleep telemetry was recorded for the selected period. Wear your watch to bed to sync sleep logs.</p>
-          </div>
-
-          <div class="sleep-content-view" id="sleep-content-view" style="display:none;">
-            <div class="sleep-stats-summary">
-              <div class="sleep-total-box">
-                <span class="value" id="sleep-total-hrs">0h 0m</span>
-                <span class="label">Total Sleep</span>
-              </div>
-              <div class="sleep-bars-grid">
-                <div class="sleep-bar-item">
-                  <div class="label-row"><span>Deep Sleep</span><span id="sleep-deep-val">0m</span></div>
-                  <div class="bar-bg"><div class="bar-fill sleep-deep" id="sleep-deep-bar" style="width: 0%;"></div></div>
-                </div>
-                <div class="sleep-bar-item">
-                  <div class="label-row"><span>Light Sleep</span><span id="sleep-light-val">0m</span></div>
-                  <div class="bar-bg"><div class="bar-fill sleep-light" id="sleep-light-bar" style="width: 0%;"></div></div>
-                </div>
-                <div class="sleep-bar-item">
-                  <div class="label-row"><span>REM Sleep</span><span id="sleep-rem-val">0m</span></div>
-                  <div class="bar-bg"><div class="bar-fill sleep-rem" id="sleep-rem-bar" style="width: 0%;"></div></div>
-                </div>
-                <div class="sleep-bar-item">
-                  <div class="label-row"><span>Time Awake</span><span id="sleep-awake-val">0m</span></div>
-                  <div class="bar-bg"><div class="bar-fill sleep-awake" id="sleep-awake-bar" style="width: 0%;"></div></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="sleep-explainer-card">
-              <h3><i class="fa-solid fa-circle-info"></i> What do Sleep Stages Mean?</h3>
-              <div class="stages-description-grid">
-                <div class="stage-info-col">
-                  <h5><span class="dot deep-dot"></span> Deep Sleep</h5>
-                  <p>Crucial for physical recovery, cellular regeneration, tissue repair, and immune system strengthening. Typically comprises 15-25% of adult sleep.</p>
-                </div>
-                <div class="stage-info-col">
-                  <h5><span class="dot light-dot"></span> Light Sleep</h5>
-                  <p>Facilitates mental relaxation and basic cognitive indexing. Prepares your body for deeper phases. Usually makes up 50-60% of a healthy night's sleep.</p>
-                </div>
-                <div class="stage-info-col">
-                  <h5><span class="dot rem-dot"></span> REM Sleep (Rapid Eye Movement)</h5>
-                  <p>Essential for memory consolidation, emotional processing, and creative synthesis. This is the primary dreaming stage, accounting for 20-25% of sleep.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section: VO2 Max -->
-      <section id="vo2-section" class="dashboard-panel">
-        <div class="panel-card vo2-hero-card">
-          <div class="vo2-meter-section">
-            <div class="vo2-dial">
-              <span class="vo2-val-big" id="vo2-value-display">N/A</span>
-              <span class="vo2-val-unit">ml/kg/min</span>
-            </div>
-            <div class="vo2-fitness-level" id="vo2-status-display">Fitness Level: Unknown</div>
-          </div>
-
-          <div class="vo2-details-text">
-            <h2><i class="fa-solid fa-lungs"></i> Cardiorespiratory VO2 Max Capacity</h2>
-            <p class="intro">VO2 Max is the single best measure of cardiovascular health and aerobic physical capacity. It represents the maximum rate at which your heart, lungs, and muscles can utilize oxygen during exercise.</p>
-            
-            <div class="vo2-level-legend">
-              <h3>Typical Scale for Adults:</h3>
-              <div class="legend-row"><span class="badge level-excellent">Excellent</span> <span>> 48 ml/kg/min</span></div>
-              <div class="legend-row"><span class="badge level-good">Good</span> <span>39 - 47 ml/kg/min</span></div>
-              <div class="legend-row"><span class="badge level-fair">Fair</span> <span>33 - 38 ml/kg/min</span></div>
-              <div class="legend-row"><span class="badge level-poor">Poor</span> <span>< 32 ml/kg/min</span></div>
-            </div>
-
-            <div class="vo2-tips">
-              <h3><i class="fa-solid fa-chart-line"></i> How to Improve VO2 Max?</h3>
-              <ul>
-                <li><strong>HIIT Workouts:</strong> High-Intensity Interval Training is the most efficient way to push your aerobic boundaries.</li>
-                <li><strong>Zone 2 Cardio:</strong> Long, steady-state runs or cycling sessions build a strong cardiovascular foundation.</li>
-                <li><strong>Consistency:</strong> Workouts must push your heart rate to near max levels to stimulate VO2 Max increases.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section: Workouts -->
-      <section id="workouts-section" class="dashboard-panel">
-        <div class="panel-card">
-          <div class="panel-card-header">
-            <h2><i class="fa-solid fa-person-running"></i> Workout History & Altimeter Data</h2>
-            <p class="subtitle">Altitude changes, running sessions, and GPS track logs</p>
-          </div>
-
-          <div class="workout-table-wrapper">
-            <table class="workout-table" id="workout-table-body">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Distance (km)</th>
-                  <th>Duration</th>
-                  <th>Avg HR (bpm)</th>
-                  <th>Calories</th>
-                  <th>Altitude Range (m)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Rows loaded via JS -->
-              </tbody>
-            </table>
-            <div class="workouts-empty-state" id="workouts-empty-view">
-              <i class="fa-solid fa-route empty-icon"></i>
-              <h3>No Running Workouts Found</h3>
-              <p>No outdoor runs or workouts with GPS tracking were found in the selected period.</p>
-            </div>
-          </div>
-
-          <div class="altitude-info-box">
-            <h3><i class="fa-solid fa-mountain"></i> Altimeter & Altitude Tracking Explained</h3>
-            <p>Your Zepp watch uses an internal barometric pressure sensor (altimeter) paired with GPS data to calculate your current height above sea level. During outdoor runs, trail hikes, or cycles, it actively logs your maximum and minimum elevation to compute cumulative climbing meters. This allows you to track elevation gain and gauge the difficulty of hilly courses.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section: Weather -->
-      <section id="weather-section" class="dashboard-panel">
-        <div class="panel-card">
-          <div class="weather-graphic-container">
-            <i class="fa-solid fa-cloud-sun-rain weather-icon-large"></i>
-            <h2>Zepp App Weather Integration</h2>
-          </div>
-          
-          <div class="weather-info-body">
-            <p class="weather-intro">A common question is whether your watch records and stores weather logs. Here is how weather works on Amazfit/Zepp devices:</p>
-            
-            <div class="weather-feature-grid">
-              <div class="wf-card">
-                <i class="fa-solid fa-mobile-screen-button"></i>
-                <h4>Phone-to-Watch Sync</h4>
-                <p>The Zepp mobile app connects to third-party weather API services in the background using your phone's current GPS location coordinates.</p>
-              </div>
-              <div class="wf-card">
-                <i class="fa-solid fa-satellite-dish"></i>
-                <h4>No Cloud Database History</h4>
-                <p>Because weather is an external forecast rather than your personal physiological telemetry, the Zepp cloud server database does NOT store a history of past weather conditions you walked in.</p>
-              </div>
-              <div class="wf-card">
-                <i class="fa-solid fa-location-crosshairs"></i>
-                <h4>Real-time GPS Pushes</h4>
-                <p>Whenever your watch and phone are connected, the local weather forecast is synced and cached on the watch storage for immediate viewing on your watch face.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section: Explain Metrics -->
-      <section id="pai-explain-section" class="dashboard-panel">
-        <div class="panel-card explain-metrics-full">
-          <h2><i class="fa-solid fa-circle-question"></i> Detailed Metric Explanation Guide</h2>
-          <p class="subtitle">Understand PAI, Sleep Stages, VO2 Max, and Energy indices</p>
-          
-          <div class="explain-accordion">
-            <div class="accordion-item">
-              <div class="accordion-header">
-                <h3>🔋 Body Battery / Biocharge Energy Index</h3>
-                <i class="fa-solid fa-chevron-down"></i>
-              </div>
-              <div class="accordion-body">
-                <p>Your Body Battery (Charge) is an index from 0 to 100% that measures your body's energy level. It dynamically tracks:</p>
-                <ul>
-                  <li><strong>HRV (Heart Rate Variability):</strong> When you are resting, the time interval between heartbeats fluctuates slightly. Higher fluctuation (high HRV) indicates high recovery and low stress, charging your battery.</li>
-                  <li><strong>Sleep:</strong> A long, restful night with deep sleep stages provides the maximum recharge percentage.</li>
-                  <li><strong>Activity:</strong> Physical exercise, heavy stress, and anxiety deplete the battery.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div class="accordion-item">
-              <div class="accordion-header">
-                <h3>🏆 Personal Activity Intelligence (PAI)</h3>
-                <i class="fa-solid fa-chevron-down"></i>
-              </div>
-              <div class="accordion-body">
-                <p>PAI was developed by the Nobel Prize-winning HUNT Fitness Study. It uses heart rate, age, gender, and activity levels to calculate a score:</p>
-                <ul>
-                  <li>It is not based on steps; it is based on heart rate intensity. Running for 20 minutes with a high heart rate earns more PAI than walking for 2 hours with a low heart rate.</li>
-                  <li>Your goal is to maintain a rolling PAI score of <strong>100 or higher</strong>. Keeping a score of 100+ is clinically linked to a 25% reduction in cardiovascular disease mortality.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div class="accordion-item">
-              <div class="accordion-header">
-                <h3>🫁 VO2 Max</h3>
-                <i class="fa-solid fa-chevron-down"></i>
-              </div>
-              <div class="accordion-body">
-                <p>VO2 Max is the abbreviation for "maximal oxygen consumption". It describes the maximum amount of oxygen your cells can take in and use during maximal exercise. It is highly valued as a metric because:</p>
-                <ul>
-                  <li>It tracks your physical fitness progression. As you perform cardio workouts regularly, your lungs become more efficient and your VO2 Max increases.</li>
-                  <li>High VO2 Max levels are strongly correlated with cellular health, longevity, and high physical endurance.</li>
-                </ul>
-              </div>
             </div>
           </div>
         </div>
@@ -477,11 +220,45 @@
         </button>
       </form>
       <div class="login-footer">
-        <p><i class="fa-solid fa-shield-halved"></i> Your credentials are sent directly to the Zepp Cloud API via secure TLS connections and are never saved in plain text.</p>
+        <p><i class="fa-solid fa-shield-halved"></i> Your credentials are sent directly to the Zepp Cloud API via secure
+          TLS connections and are never saved in plain text.</p>
       </div>
     </div>
   </div>
 
+  <!-- Navigation Drawer (Hamburger Menu) -->
+  <div id="nav-drawer" class="nav-drawer">
+    <div class="drawer-header">
+      <div class="brand-inline">
+        <i class="fa-solid fa-heart-pulse brand-icon"></i>
+        <h2>Zepp Menu</h2>
+      </div>
+      <button id="drawer-close-btn" class="drawer-close-btn" title="Close Menu">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <nav class="drawer-nav">
+      <a href="index.html" class="drawer-link active">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Overview</span>
+      </a>
+      <a href="sleep_details.html" class="drawer-link">
+        <i class="fa-solid fa-bed"></i>
+        <span>Sleep Analytics</span>
+      </a>
+      <a href="heart_details.html" class="drawer-link">
+        <i class="fa-solid fa-heart-pulse"></i>
+        <span>Heart Health</span>
+      </a>
+      <a href="workouts.html" class="drawer-link">
+        <i class="fa-solid fa-running"></i>
+        <span>Workouts History</span>
+      </a>
+    </nav>
+  </div>
+  <div id="drawer-overlay" class="drawer-overlay"></div>
+
   <script src="app.js"></script>
 </body>
+
 </html>
